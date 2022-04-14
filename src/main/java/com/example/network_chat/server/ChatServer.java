@@ -13,6 +13,7 @@ public class ChatServer {
     public ChatServer() {
         this.authService = new InMemoryAuthService();
         this.clients = new ArrayList<>();
+        authService.start();
     }
 
     public void run() {
@@ -45,5 +46,9 @@ public class ChatServer {
 
     public void subscribe(ClientHandler client) {
         clients.add(client);
+    }
+
+    public void unsubscribe(ClientHandler clientHandler) {
+        clients.remove(clientHandler);
     }
 }
