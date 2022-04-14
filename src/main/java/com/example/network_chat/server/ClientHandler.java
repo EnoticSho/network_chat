@@ -41,8 +41,8 @@ public class ClientHandler {
                 if ("/end".equals(msg)){
                     break;
                 }
-                System.out.println("message get: " + msg);
-                chatServer.broadcast(msg);
+                System.out.println("message get: " + getNick() + ": " + msg);
+                chatServer.broadcast(getNick() + ": " + msg);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -103,9 +103,6 @@ public class ClientHandler {
     public void sendMessage(String s) {
         try {
             System.out.println("sending message: " + s);
-            if (nick != null && !s.startsWith("/")){
-                s = this.nick + ": " + s;
-            }
             out.writeUTF(s);
         } catch (IOException e) {
             throw new RuntimeException(e);

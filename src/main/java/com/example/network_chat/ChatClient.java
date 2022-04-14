@@ -12,11 +12,11 @@ public class ChatClient {
 
     private ClientController controller;
 
-    public ChatClient(ClientController controller){
+    public ChatClient(ClientController controller) {
         this.controller = controller;
     }
 
-    public void openConnection() throws IOException{
+    public void openConnection() throws IOException {
         socket = new Socket("localhost", 8189);
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
@@ -24,7 +24,7 @@ public class ChatClient {
             try {
                 waitAuth();
                 readMessage();
-            }finally {
+            } finally {
                 closeConnection();
             }
         }).start();
@@ -35,10 +35,10 @@ public class ChatClient {
     }
 
     private void readMessage() {
-        while (true){
+        while (true) {
             try {
                 String s = in.readUTF();
-                if ("/end".equals(s)){
+                if ("/end".equals(s)) {
                     controller.setAuth(false);
                     break;
                 }
@@ -50,17 +50,17 @@ public class ChatClient {
     }
 
     private void waitAuth() {
-        while (true){
+        while (true) {
             try {
                 final String msg = in.readUTF();
-                if (msg.startsWith("/authok")){
+                if (msg.startsWith("/authok")) {
                     String[] s = msg.split(" ");
                     String nick = s[1];
                     controller.addMessage("success auth " + nick);
                     controller.setAuth(true);
                     break;
                 }
-            }catch (IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
