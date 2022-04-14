@@ -35,14 +35,19 @@ public class ClientHandler {
     }
 
     private void readMessage() {
-        while (true){
+        while (true) {
             try {
                 final String msg = in.readUTF();
-                if ("/end".equals(msg)){
+                System.out.println("message get: " + getNick() + ": " + msg);
+                if ("/end".equals(msg)) {
                     break;
                 }
-                System.out.println("message get: " + getNick() + ": " + msg);
-                chatServer.broadcast(getNick() + ": " + msg);
+                // отправка сообщения из одного слова и без проверок есть ли этот пользователь вообще
+                if (msg.startsWith("/w ")) {
+                    String to = msg.split(" ")[1];
+                    String newMsg = msg.split(" ")[2];
+                    chatServer.broadcast(this, to, newMsg);
+                }else chatServer.broadcast("[" + getNick() + "] " + msg);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -59,7 +64,7 @@ public class ClientHandler {
                     final String password = s[2];
                     final String nick = authService.getNickByLoginAndPassword(login, password);
                     if (nick != null) {
-                        if (chatServer.isNickBusy(nick)){
+                        if (chatServer.isNickBusy(nick)) {
                             sendMessage("busy");
                             continue;
                         }

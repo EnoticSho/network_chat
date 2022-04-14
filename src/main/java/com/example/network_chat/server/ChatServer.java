@@ -51,4 +51,13 @@ public class ChatServer {
     public void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
     }
+
+    public void broadcast(ClientHandler clientHandler, String to, String msg) {
+        for (ClientHandler client : clients) {
+            if (client.getNick().equals(to)){
+                client.sendMessage("{W from " + clientHandler.getNick() + "} " + msg);
+            }
+        }
+        clientHandler.sendMessage("{W to " + to + "} " + msg);
+    }
 }
