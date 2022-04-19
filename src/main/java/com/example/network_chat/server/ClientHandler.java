@@ -13,6 +13,7 @@ public class ClientHandler {
     private final DataInputStream in;
     private final DataOutputStream out;
     private final AuthService authService;
+    boolean isAuth = false;
 
     private String nick;
 
@@ -28,7 +29,9 @@ public class ClientHandler {
             new Thread(() -> {
                 try {
                     authenticate();
-                    readMessages();
+                    if (isAuth){
+                        readMessages();
+                    }
                 } finally {
                     closeConnection();
                 }
@@ -40,7 +43,7 @@ public class ClientHandler {
 
     }
 
-    private void closeConnection() {
+    public void closeConnection() {
         sendMessage(Command.END);
         try {
             if (in != null) {
@@ -73,6 +76,10 @@ public class ClientHandler {
                 if (Command.isCommand(str)) {
                     final Command command = Command.getCommand(str);
                     final String[] params = command.parse(str);
+                    if (command == Command.END) {
+                        sendMessage(Command.END);
+                        break;
+                    }
                     if (command == Command.AUTH) {
                         final String login = params[0];
                         final String password = params[1];
@@ -86,6 +93,7 @@ public class ClientHandler {
                             this.nick = nick;
                             server.broadcast("Пользователь " + nick + " зашел в чат");
                             server.subscribe(this);
+                            isAuth = true;
                             break;
                         } else {
                             sendMessage(Command.ERROR, "Неверные логин и пароль");

@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
+import com.example.network_chat.server.ThreadTime;
 import javafx.application.Platform;
 
 public class ChatClient {
@@ -63,11 +64,16 @@ public class ChatClient {
     }
 
     private void waitAuthenticate() throws IOException {
+        ThreadTime threadTime = new ThreadTime(this);
+        threadTime.start();
         while (true) {
             final String msgAuth = in.readUTF();
             if (Command.isCommand(msgAuth)) {
                 final Command command = Command.getCommand(msgAuth);
                 final String[] params = command.parse(msgAuth);
+                if (command == Command.END){
+                    break;
+                }
                 if (command == Command.AUTHOK) {
                     final String nick = params[0];
                     controller.addMessage("Успешная авторизация под ником " + nick);
@@ -81,7 +87,7 @@ public class ChatClient {
         }
     }
 
-    private void closeConnection() {
+    public void closeConnection() {
         if (socket != null) {
             try {
                 socket.close();
