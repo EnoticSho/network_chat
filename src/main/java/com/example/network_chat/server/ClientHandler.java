@@ -153,6 +153,10 @@ public class ClientHandler {
                         server.sendMessageToClient(this, params[0], params[1]);
                         continue;
                     }
+                    if (command == Command.CHANGENICK){
+                        server.changeNick(this, params[0], connection);
+                        continue;
+                    }
                 }
                 server.broadcast(nick + ": " + msg);
             }
@@ -164,5 +168,9 @@ public class ClientHandler {
 
     public String getNick() {
         return nick;
+    }
+
+    public void setNick(String nick){
+        this.nick = nick;
     }
 }

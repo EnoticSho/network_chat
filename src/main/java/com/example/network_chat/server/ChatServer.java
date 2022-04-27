@@ -5,9 +5,7 @@ import com.example.network_chat.Command;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,6 +70,18 @@ public class ChatServer {
             sender.sendMessage("участнику " + to + ": " + message);
         } else {
             sender.sendMessage(Command.ERROR, "Участника с ником " + to + " нет в чате!");
+        }
+    }
+
+    public void changeNick(ClientHandler clientHandler, String param, Connection connection) {
+        try (PreparedStatement statement = connection.prepareStatement(String.format("UPDATE users SET nick = '"+ param +"' WHERE nick = ?"))){
+            statement.setString(1, clientHandler.getNick());
+            statement.executeUpdate();
+            clientHandler.sendMessage("Вы успешно изменили ник с " + clientHandler.getNick() + " на " + param);
+            clientHandler.setNick(param);
+            broadcastClientList();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }

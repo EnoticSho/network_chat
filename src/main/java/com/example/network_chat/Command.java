@@ -50,6 +50,13 @@ public enum Command {
             }
             return nicks;
         }
+    },
+    CHANGENICK("/changeNick") {
+        @Override
+        public String[] parse(String commandText) {
+            final String[] split = commandText.split(COMMAND_DELIMITER, 2);
+            return new String[]{split[1]};
+        }
     };
 
     private static final Map<String, Command> map = Stream.of(Command.values())
