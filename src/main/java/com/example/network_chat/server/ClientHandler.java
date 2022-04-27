@@ -6,24 +6,28 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class ClientHandler {
     private final Socket socket;
     private final ChatServer server;
     private final DataInputStream in;
     private final DataOutputStream out;
-    private final AuthService authService;
+    private final Connection connection;
 
     private String nick;
 
-    public ClientHandler(Socket socket, ChatServer server, AuthService authService) {
+    public ClientHandler(Socket socket, ChatServer server, Connection connection) {
         try {
             this.nick = "";
             this.socket = socket;
             this.server = server;
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
-            this.authService = authService;
+            this.connection = connection;
 
             new Thread(() -> {
                 try {
@@ -64,6 +68,13 @@ public class ClientHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void authenticate() {
@@ -76,7 +87,7 @@ public class ClientHandler {
                     if (command == Command.AUTH) {
                         final String login = params[0];
                         final String password = params[1];
-                        final String nick = authService.getNickByLoginAndPassword(login, password);
+                        final String nick = getNickByLoginAndPassword(connection, login, password);
                         if (nick != null) {
                             if (server.isNickBusy(nick)) {
                                 sendMessage(Command.ERROR, "Пользователь уже авторизован");
@@ -97,6 +108,21 @@ public class ClientHandler {
             }
 
         }
+    }
+
+    private String getNickByLoginAndPassword(Connection connection, String login, String password) {
+        try (PreparedStatement statement = connection.prepareStatement("SELECT nick FROM users WHERE login = ? AND password = ?")){
+            statement.setString(1,login);
+            statement.setString(2, password);
+            ResultSet rs = statement.executeQuery();
+            while (rs.next()) {
+                String nick = rs.getString("nick");
+                return nick;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public void sendMessage(Command command, String... params) {
