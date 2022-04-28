@@ -1,17 +1,18 @@
 package com.example.network_chat;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 
+import com.example.messages.*;
 import javafx.application.Platform;
 
 public class ChatClient {
 
     private Socket socket;
-    private DataInputStream in;
-    private DataOutputStream out;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
+
+    private String nick;
 
     private final Controller controller;
 
@@ -21,13 +22,13 @@ public class ChatClient {
 
     public void openConnection() throws Exception {
         socket = new Socket("localhost", 8189);
-        in = new DataInputStream(socket.getInputStream());
-        out = new DataOutputStream(socket.getOutputStream());
+        in = new ObjectInputStream(socket.getInputStream());
+        out = new ObjectOutputStream(socket.getOutputStream());
         final Thread readThread = new Thread(() -> {
             try {
                 waitAuthenticate();
                 readMessage();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             } finally {
                 closeConnection();
@@ -38,45 +39,38 @@ public class ChatClient {
 
     }
 
-    private void readMessage() throws IOException {
+    private void readMessage() throws Exception {
         while (true) {
-            final String message = in.readUTF();
+            final AbstractMessage message = (AbstractMessage) in.readObject();
             System.out.println("Receive message: " + message);
-            if (Command.isCommand(message)) {
-                final Command command = Command.getCommand(message);
-                final String[] params = command.parse(message);
-                if (command == Command.END) {
-                    controller.setAuth(false);
-                    break;
-                }
-                if (command == Command.ERROR) {
-                    Platform.runLater(() -> controller.showError(params));
-                    continue;
-                }
-                if (command == Command.CLIENTS) {
-                    controller.updateClientList(params);
-                    continue;
-                }
+            if (message.getCommand() == Command.END) {
+                controller.setAuth(false);
+                break;
             }
-            controller.addMessage(message);
+            if (message.getCommand() == Command.ERROR) {
+                final ErrorMessage errorMessage = (ErrorMessage) message;
+                Platform.runLater(() -> controller.showError(errorMessage.getError()));
+            } else if (message.getCommand() == Command.CLIENTS) {
+                final ClientListMessage clientListMessage = (ClientListMessage) message;
+                controller.updateClientList(clientListMessage.getClients());
+            } else if (message.getCommand() == Command.MESSAGE) {
+                final SimpleMessage simpleMessage = (SimpleMessage) message;
+                controller.addMessage(simpleMessage.getNickFrom() + ": " + simpleMessage.getMessage());
+            }
         }
     }
 
-    private void waitAuthenticate() throws IOException {
+    private void waitAuthenticate() throws IOException, ClassNotFoundException {
         while (true) {
-            final String msgAuth = in.readUTF();
-            if (Command.isCommand(msgAuth)) {
-                final Command command = Command.getCommand(msgAuth);
-                final String[] params = command.parse(msgAuth);
-                if (command == Command.AUTHOK) {
-                    final String nick = params[0];
-                    controller.addMessage("Успешная авторизация под ником " + nick);
-                    controller.setAuth(true);
-                    break;
-                }
-                if (Command.ERROR.equals(command)) {
-                    Platform.runLater(() -> controller.showError(params));
-                }
+            final AbstractMessage message = (AbstractMessage) in.readObject();
+            if (message.getCommand() == Command.AUTHOK) {
+                controller.addMessage("Успешная авторизация под ником ");
+                controller.setAuth(true);
+                break;
+            }
+            if (message.getCommand() == Command.ERROR) {
+                final ErrorMessage errorMessage = (ErrorMessage) message;
+                Platform.runLater(() -> controller.showError(errorMessage.getError()));
             }
         }
     }
@@ -106,16 +100,16 @@ public class ChatClient {
         System.exit(0);
     }
 
-    public void sendMessage(String message) {
+    public void sendMessage(AbstractMessage message) {
         try {
             System.out.println("Send message: " + message);
-            out.writeUTF(message);
+            out.writeObject(message);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void sendMessage(Command command, String... params) {
-        sendMessage(command.collectMessage(params));
+    public String getNick() {
+        return nick;
     }
 }
