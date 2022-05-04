@@ -4,10 +4,16 @@ public class SimpleMessage extends AbstractMessage {
     private final String message;
     private final String nickFrom;
 
-    private SimpleMessage(String message, String nickFrom) {
+    public SimpleMessage(String message, String nickFrom) {
         super(Command.MESSAGE);
         this.message = message;
         this.nickFrom = nickFrom;
+    }
+
+    public SimpleMessage(String message) {
+        super(Command.MESSAGE);
+        this.message = message;
+        nickFrom = null;
     }
 
     public String getMessage() {
@@ -20,6 +26,9 @@ public class SimpleMessage extends AbstractMessage {
 
     public static SimpleMessage of(String message, String nickFrom) {
         return new SimpleMessage(message, nickFrom);
+    }
+    public static SimpleMessage of(String message) {
+        return new SimpleMessage(message);
     }
 
     @Override

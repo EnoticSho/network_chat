@@ -10,11 +10,8 @@ public class ChangeNickService implements Closeable {
     private static final String DB_CONNECTION_URL = "jdbc:sqlite:users.db";
     private final Connection connection;
 
-    private final ClientHandler clientHandler;
 
-
-    ChangeNickService(ClientHandler clientHandler){
-        this.clientHandler = clientHandler;
+    ChangeNickService(){
         try {
             connection = DriverManager.getConnection(DB_CONNECTION_URL);
         } catch (SQLException e) {
@@ -22,10 +19,10 @@ public class ChangeNickService implements Closeable {
         }
     }
 
-    public void changeNick(String param) {
+    public void changeNick(String newNick, String oldNick) {
         try (PreparedStatement statement = connection.prepareStatement("UPDATE users SET nick = ? WHERE nick = ?")){
-            statement.setString(1, param);
-            statement.setString(2, clientHandler.getNick());
+            statement.setString(1, newNick);
+            statement.setString(2, oldNick);
             statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

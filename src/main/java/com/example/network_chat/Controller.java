@@ -114,10 +114,11 @@ public class Controller {
     public void updateClientList(Collection<String> clients) {
         clientList.getItems().clear();
         clientList.getItems().addAll(clients);
+
     }
 
     public void btnChangeNick(ActionEvent actionEvent) {
-        client.sendMessage(ChangeNickMessage.of(textField.getText()));
+        client.sendMessage(ChangeNickMessage.of(client.getNick(),textField.getText()));
         textField.clear();
         textField.requestFocus();
     }

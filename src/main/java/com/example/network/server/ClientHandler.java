@@ -84,7 +84,7 @@ public class ClientHandler {
                         authTimeThread.interrupt();
                         sendMessage(AuthOkMessage.of(nick));
                         this.nick = nick;
-                        server.broadcast(SimpleMessage.of(nick, "Пользователь " + nick + " зашел в чат"));
+                        server.broadcast(SimpleMessage.of("Пользователь " + nick + " зашел в чат"));
                         server.subscribe(this);
                         break;
                     } else {
@@ -123,11 +123,12 @@ public class ClientHandler {
                     server.sendMessageToClient(this, privateMessage.getNickTo(), privateMessage.getMessage());
                 }
                 if (message.getCommand() == Command.CHANGENICK) {
-                    try (ChangeNickService changeNickService = new ChangeNickService(this)){
+                    try (ChangeNickService changeNickService = new ChangeNickService()){
                         ChangeNickMessage changeNickMessage = (ChangeNickMessage) message;
-                        changeNickService.changeNick(changeNickMessage.getNick());
-                        this.nick = changeNickMessage.getNick();
-
+                        changeNickService.changeNick(changeNickMessage.getNewNick(), changeNickMessage.getOldNick());
+                        this.nick = changeNickMessage.getNewNick();
+                        server.update(changeNickMessage.getOldNick(), this);
+                        server.broadcast(changeNickMessage);
                     }
                 }
             }

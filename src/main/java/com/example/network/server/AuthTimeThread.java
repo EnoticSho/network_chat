@@ -14,7 +14,7 @@ public class AuthTimeThread extends Thread{
                 Thread.sleep(AUTH_TIME);
                 clientHandler.closeConnection();
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException();
             }
     }
 }

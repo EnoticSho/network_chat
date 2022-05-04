@@ -21,7 +21,7 @@ public class ChatServer {
 
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(8109);
-             AuthService authService = new DbAuthService()) { // Соединение с базой
+             AuthService authService = new DbAuthService()) {
             while (true) {
                 System.out.println("Wait client connection...");
                 final Socket socket = serverSocket.accept();
@@ -38,6 +38,12 @@ public class ChatServer {
     }
 
     public void subscribe(ClientHandler client) {
+        clients.put(client.getNick(), client);
+        broadcastClientList();
+    }
+
+    public void update(String oldNick, ClientHandler client){
+        clients.remove(oldNick);
         clients.put(client.getNick(), client);
         broadcastClientList();
     }
@@ -63,8 +69,8 @@ public class ChatServer {
     public void sendMessageToClient(ClientHandler sender, String to, String message) {
         final ClientHandler receiver = clients.get(to);
         if (receiver != null) {
-            receiver.sendMessage(SimpleMessage.of("от " + sender.getNick() + ": " + message, sender.getNick()));
-            sender.sendMessage(SimpleMessage.of("участнику " + to + ": " + message, sender.getNick()));
+            receiver.sendMessage(PrivateMessage.of(to, sender.getNick(), message));
+            sender.sendMessage(PrivateMessage.of(to, sender.getNick(), message));
         } else {
             sender.sendMessage(ErrorMessage.of("Участника с ником " + to + " нет в чате!"));
         }

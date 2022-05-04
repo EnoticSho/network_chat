@@ -53,9 +53,22 @@ public class ChatClient {
             } else if (message.getCommand() == Command.CLIENTS) {
                 final ClientListMessage clientListMessage = (ClientListMessage) message;
                 controller.updateClientList(clientListMessage.getClients());
+            } else if (message.getCommand() == Command.CHANGENICK) {
+                final ChangeNickMessage changeNickMessage = (ChangeNickMessage) message;
+                controller.addMessage("Пользователь " + changeNickMessage.getOldNick() + " изменил ник на : " + changeNickMessage.getNewNick());
+                if (nick.equals(changeNickMessage.getOldNick())){
+                    this.nick = changeNickMessage.getNewNick();
+                }
+            }else if (message.getCommand() == Command.PRIVATE_MESSAGE) {
+                final PrivateMessage privateMessage = (PrivateMessage) message;
+                if (privateMessage.getNickFrom().equals(getNick())) {
+                    controller.addMessage("Участнику " + privateMessage.getNickTo() + ": " + privateMessage.getMessage());
+                } else controller.addMessage("от " + privateMessage.getNickFrom() + ": " + privateMessage.getMessage());
             } else if (message.getCommand() == Command.MESSAGE) {
                 final SimpleMessage simpleMessage = (SimpleMessage) message;
-                controller.addMessage(simpleMessage.getNickFrom() + ": " + simpleMessage.getMessage());
+                if (simpleMessage.getNickFrom() == null){
+                    controller.addMessage(simpleMessage.getMessage());
+                }else controller.addMessage(simpleMessage.getNickFrom() + ": " + simpleMessage.getMessage());
             }
         }
     }
