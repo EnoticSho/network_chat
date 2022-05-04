@@ -1,7 +1,9 @@
 package com.example.network_chat;
 
+import java.util.Collection;
 import java.util.Optional;
 
+import com.example.messages.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -13,6 +15,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+
 
 public class Controller {
 
@@ -33,6 +36,8 @@ public class Controller {
 
     private final ChatClient client;
 
+    private String nickTo;
+
     public Controller() {
         client = new ChatClient(this);
         while (true) {
@@ -50,7 +55,12 @@ public class Controller {
         if (message.isEmpty()) {
             return;
         }
-        client.sendMessage(message);
+        if (nickTo != null) {
+            client.sendMessage(PrivateMessage.of(nickTo, client.getNick(), message));
+            nickTo = null;
+        } else {
+            client.sendMessage(SimpleMessage.of(message, client.getNick()));
+        }
         textField.clear();
         textField.requestFocus();
     }
@@ -60,7 +70,7 @@ public class Controller {
     }
 
     public void btnAuthClick(ActionEvent actionEvent) {
-        client.sendMessage(Command.AUTH, loginField.getText(), passwordField.getText());
+        client.sendMessage(AuthMessage.of(loginField.getText(), passwordField.getText()));
     }
 
     public void setAuth(boolean success) {
@@ -82,24 +92,33 @@ public class Controller {
         }
     }
 
-    public void showError(String[] error) {
-        final Alert alert = new Alert(Alert.AlertType.ERROR, error[0], new ButtonType("OK", ButtonBar.ButtonData.OK_DONE));
+    public void showError(String error) {
+        final Alert alert = new Alert(Alert.AlertType.ERROR, error, new ButtonType("OK", ButtonBar.ButtonData.OK_DONE));
         alert.setTitle("Ошибка!");
         alert.showAndWait();
     }
 
     public void selectClient(MouseEvent mouseEvent) {
-        if (mouseEvent.getClickCount() == 2) { // /w nick1 private message
+        if (mouseEvent.getClickCount() == 2) {
             final String message = textField.getText();
             final String nick = clientList.getSelectionModel().getSelectedItem();
-            textField.setText(Command.PRIVATE_MESSAGE.collectMessage(nick, message));
+            if (nick != null) {
+                this.nickTo = nick;
+            }
+//            textField.setText(Command.PRIVATE_MESSAGE.collectMessage(nick, message));
             textField.requestFocus();
             textField.selectEnd();
         }
     }
 
-    public void updateClientList(String[] params) {
+    public void updateClientList(Collection<String> clients) {
         clientList.getItems().clear();
-        clientList.getItems().addAll(params);
+        clientList.getItems().addAll(clients);
+    }
+
+    public void btnChangeNick(ActionEvent actionEvent) {
+        client.sendMessage(ChangeNickMessage.of(textField.getText()));
+        textField.clear();
+        textField.requestFocus();
     }
 }

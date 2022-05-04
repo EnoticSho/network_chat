@@ -1,12 +1,15 @@
-package com.example.network_chat.server;
+package com.example.network.server;
 
-import com.example.network_chat.Command;
+import com.example.messages.*;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ChatServer {
 
@@ -17,8 +20,8 @@ public class ChatServer {
     }
 
     public void run() {
-        try (ServerSocket serverSocket = new ServerSocket(8189);
-             AuthService authService = new InMemoryAuthService()) {
+        try (ServerSocket serverSocket = new ServerSocket(8109);
+             AuthService authService = new DbAuthService()) { // Соединение с базой
             while (true) {
                 System.out.println("Wait client connection...");
                 final Socket socket = serverSocket.accept();
@@ -45,30 +48,25 @@ public class ChatServer {
     }
 
     private void broadcastClientList() {
-        StringBuilder nicks = new StringBuilder();
-        for (ClientHandler value : clients.values()) {
-            nicks.append(value.getNick()).append(" ");
-        }
-        broadcast(Command.CLIENTS, nicks.toString().trim());
+        final List<String> nicks = clients.values().stream()
+                .map(ClientHandler::getNick)
+                .collect(Collectors.toList());
+        broadcast(ClientListMessage.of(nicks));
     }
 
-    private void broadcast(Command command, String nicks) {
+    public void broadcast(AbstractMessage message) {
         for (ClientHandler client : clients.values()) {
-            client.sendMessage(command, nicks);
+            client.sendMessage(message);
         }
-    }
-
-    public void broadcast(String msg) {
-        clients.values().forEach(client -> client.sendMessage(msg));
     }
 
     public void sendMessageToClient(ClientHandler sender, String to, String message) {
         final ClientHandler receiver = clients.get(to);
         if (receiver != null) {
-            receiver.sendMessage("от " + sender.getNick() + ": " + message);
-            sender.sendMessage("участнику " + to + ": " + message);
+            receiver.sendMessage(SimpleMessage.of("от " + sender.getNick() + ": " + message, sender.getNick()));
+            sender.sendMessage(SimpleMessage.of("участнику " + to + ": " + message, sender.getNick()));
         } else {
-            sender.sendMessage(Command.ERROR, "Участника с ником " + to + " нет в чате!");
+            sender.sendMessage(ErrorMessage.of("Участника с ником " + to + " нет в чате!"));
         }
     }
 }

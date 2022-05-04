@@ -1,4 +1,4 @@
-package com.example.network_chat.server;
+package com.example.network.server;
 
 import java.io.Closeable;
 import java.io.IOException;
