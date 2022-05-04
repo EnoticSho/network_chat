@@ -20,7 +20,7 @@ public class ChatServer {
     }
 
     public void run() {
-        try (ServerSocket serverSocket = new ServerSocket(8189);
+        try (ServerSocket serverSocket = new ServerSocket(8109);
              Connection connection = DriverManager.getConnection("jdbc:sqlite:users.db")) { // Соединение с базой
             while (true) {
                 System.out.println("Wait client connection...");

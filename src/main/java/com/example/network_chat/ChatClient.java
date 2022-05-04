@@ -21,15 +21,15 @@ public class ChatClient {
     }
 
     public void openConnection() throws Exception {
-        socket = new Socket("localhost", 8189);
-        in = new ObjectInputStream(socket.getInputStream());
+        socket = new Socket("localhost", 8109);
         out = new ObjectOutputStream(socket.getOutputStream());
+        in = new ObjectInputStream(socket.getInputStream());
         final Thread readThread = new Thread(() -> {
             try {
                 waitAuthenticate();
                 readMessage();
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             } finally {
                 closeConnection();
             }
