@@ -21,14 +21,14 @@ public class ChatServer {
 
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(8109);
-             Connection connection = DriverManager.getConnection("jdbc:sqlite:users.db")) { // Соединение с базой
+             AuthService authService = new DbAuthService()) { // Соединение с базой
             while (true) {
                 System.out.println("Wait client connection...");
                 final Socket socket = serverSocket.accept();
-                new ClientHandler(socket, this, connection);
+                new ClientHandler(socket, this, authService);
                 System.out.println("Client connected");
             }
-        } catch (IOException | SQLException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -69,16 +69,4 @@ public class ChatServer {
             sender.sendMessage(ErrorMessage.of("Участника с ником " + to + " нет в чате!"));
         }
     }
-
-//    public void changeNick(ClientHandler clientHandler, String param, Connection connection) {
-//        try (PreparedStatement statement = connection.prepareStatement(String.format("UPDATE users SET nick = '"+ param +"' WHERE nick = ?"))){
-//            statement.setString(1, clientHandler.getNick());
-//            statement.executeUpdate();
-//            clientHandler.sendMessage("Вы успешно изменили ник с " + clientHandler.getNick() + " на " + param);
-//            clientHandler.setNick(param);
-//            broadcastClientList();
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-//    }
 }

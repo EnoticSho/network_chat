@@ -64,7 +64,8 @@ public class ChatClient {
         while (true) {
             final AbstractMessage message = (AbstractMessage) in.readObject();
             if (message.getCommand() == Command.AUTHOK) {
-                controller.addMessage("Успешная авторизация под ником ");
+                this.nick = ((AuthOkMessage) message).getNick();
+                controller.addMessage("Успешная авторизация под ником " + nick);
                 controller.setAuth(true);
                 break;
             }

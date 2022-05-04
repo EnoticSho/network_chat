@@ -7,5 +7,6 @@ public enum Command {
     MESSAGE,
     END,
     ERROR,
-    CLIENTS
+    CLIENTS,
+    CHANGENICK
 }

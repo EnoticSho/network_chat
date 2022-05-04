@@ -4,29 +4,28 @@ import com.example.messages.*;
 
 import java.io.*;
 import java.net.Socket;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 public class ClientHandler {
+    private final AuthTimeThread authTimeThread;
     private final Socket socket;
     private final ChatServer server;
     private final ObjectInputStream in;
     private final ObjectOutputStream out;
-    private final Connection connection;
+    private final AuthService authService;
 
     private String nick;
 
-    public ClientHandler(Socket socket, ChatServer server, Connection connection) {
+    public ClientHandler(Socket socket, ChatServer server, AuthService authService) {
         try {
             this.nick = "";
             this.socket = socket;
             this.server = server;
             this.in = new ObjectInputStream(socket.getInputStream());
             this.out = new ObjectOutputStream(socket.getOutputStream());
-            this.connection = connection;
+            this.authService = authService;
 
+            authTimeThread = new AuthTimeThread(this);
+            authTimeThread.start();
             new Thread(() -> {
                 try {
                     authenticate();
@@ -66,13 +65,6 @@ public class ClientHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
     }
 
     private void authenticate() {
@@ -83,12 +75,13 @@ public class ClientHandler {
                     final AuthMessage authMessage = (AuthMessage) message;
                     final String login = authMessage.getLogin();
                     final String password = authMessage.getPassword();
-                    final String nick = getNickByLoginAndPassword(connection, login, password);
+                    final String nick = authService.getNickByLoginAndPassword(login, password);
                     if (nick != null) {
                         if (server.isNickBusy(nick)) {
                             sendMessage(ErrorMessage.of("Пользователь уже авторизован"));
                             continue;
                         }
+                        authTimeThread.interrupt();
                         sendMessage(AuthOkMessage.of(nick));
                         this.nick = nick;
                         server.broadcast(SimpleMessage.of(nick, "Пользователь " + nick + " зашел в чат"));
@@ -102,21 +95,6 @@ public class ClientHandler {
                 throw new RuntimeException(e);
             }
         }
-    }
-
-    private String getNickByLoginAndPassword(Connection connection, String login, String password) {
-        try (PreparedStatement statement = connection.prepareStatement("SELECT nick FROM users WHERE login = ? AND password = ?")) {
-            statement.setString(1, login);
-            statement.setString(2, password);
-            ResultSet rs = statement.executeQuery();
-            while (rs.next()) {
-                String nick = rs.getString("nick");
-                return nick;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     public void sendMessage(AbstractMessage message) {
@@ -144,10 +122,14 @@ public class ClientHandler {
                     final PrivateMessage privateMessage = (PrivateMessage) message;
                     server.sendMessageToClient(this, privateMessage.getNickTo(), privateMessage.getMessage());
                 }
-//                if (message.getCommand() == Command.CHANGENICK) {
-//                    server.changeNick(this, params[0], connection);
-//                    continue;
-//                }
+                if (message.getCommand() == Command.CHANGENICK) {
+                    try (ChangeNickService changeNickService = new ChangeNickService(this)){
+                        ChangeNickMessage changeNickMessage = (ChangeNickMessage) message;
+                        changeNickService.changeNick(changeNickMessage.getNick());
+                        this.nick = changeNickMessage.getNick();
+
+                    }
+                }
             }
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -157,9 +139,5 @@ public class ClientHandler {
 
     public String getNick() {
         return nick;
-    }
-
-    public void setNick(String nick) {
-        this.nick = nick;
     }
 }
