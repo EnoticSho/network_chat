@@ -74,8 +74,9 @@ public class ChatServer {
     }
 
     public void changeNick(ClientHandler clientHandler, String param, Connection connection) {
-        try (PreparedStatement statement = connection.prepareStatement(String.format("UPDATE users SET nick = '"+ param +"' WHERE nick = ?"))){
-            statement.setString(1, clientHandler.getNick());
+        try (PreparedStatement statement = connection.prepareStatement("UPDATE users SET nick = ? WHERE nick = ?")){
+            statement.setString(1, param);
+            statement.setString(2, clientHandler.getNick());
             statement.executeUpdate();
             clientHandler.sendMessage("Вы успешно изменили ник с " + clientHandler.getNick() + " на " + param);
             clientHandler.setNick(param);
