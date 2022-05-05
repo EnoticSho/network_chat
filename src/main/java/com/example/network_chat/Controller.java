@@ -9,6 +9,7 @@ import java.util.Optional;
 import com.example.messages.*;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
@@ -19,6 +20,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.stage.WindowEvent;
 
 
 public class Controller {
@@ -71,11 +73,6 @@ public class Controller {
 
     public void addMessage(String message) {
         textArea.appendText(message + "\n");
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileHistory, true))) {
-            writer.write(message + "\n");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public void btnAuthClick(ActionEvent actionEvent) {
@@ -152,6 +149,20 @@ public class Controller {
             }
         } catch (IOException ex) {
             System.out.println(ex);
+        }
+    }
+
+    private final EventHandler<WindowEvent> closeEventHandler = event -> writeHistory();
+
+    public EventHandler<WindowEvent> getCloseEventHandler(){
+        return closeEventHandler;
+    }
+
+    public void writeHistory(){
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileHistory, true))) {
+            writer.write(textArea.getText());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

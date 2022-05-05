@@ -1,9 +1,11 @@
 package com.example.network_chat;
 
 import javafx.application.Application;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import java.io.IOException;
 
@@ -15,6 +17,8 @@ public class UIClient extends Application {
         stage.setTitle("GB Chat UI");
         stage.setScene(scene);
         stage.show();
+        Controller controller = fxmlLoader.getController();
+        stage.setOnCloseRequest(controller.getCloseEventHandler());
     }
 
     public static void main(String[] args) {
