@@ -1,6 +1,9 @@
 package com.example.network_chat;
 
+import java.io.*;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import com.example.messages.*;
@@ -35,8 +38,8 @@ public class Controller {
     private TextArea textArea;
 
     private final ChatClient client;
-
     private String nickTo;
+    private String fileHistory;
 
     public Controller() {
         client = new ChatClient(this);
@@ -67,15 +70,22 @@ public class Controller {
 
     public void addMessage(String message) {
         textArea.appendText(message + "\n");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileHistory))) {
+            writer.write(textArea.getText());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void btnAuthClick(ActionEvent actionEvent) {
         client.sendMessage(AuthMessage.of(loginField.getText(), passwordField.getText()));
+        fileHistory = "History" + loginField.getText();
     }
 
     public void setAuth(boolean success) {
         loginBox.setVisible(!success);
         messageBox.setVisible(success);
+        loadHistory();
     }
 
     private void showNotification() {
@@ -118,8 +128,34 @@ public class Controller {
     }
 
     public void btnChangeNick(ActionEvent actionEvent) {
-        client.sendMessage(ChangeNickMessage.of(client.getNick(),textField.getText()));
+        client.sendMessage(ChangeNickMessage.of(client.getNick(), textField.getText()));
         textField.clear();
         textField.requestFocus();
+    }
+
+    public void loadHistory() {
+        int pos = 50;
+        List<String> list = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(fileHistory))) {
+            String s;
+            while ((s = br.readLine()) != null) {
+                list.add(s);
+            }
+//            if (list.size() > pos) {
+//                for (int i = list.size() - pos; i < list.size(); i++) {
+//                    if (list.get(i) != null) {
+//                        textArea.appendText(list.get(i) + "\n");
+//                    }
+//                }
+//            } else {
+                for (int i = 0; i < list.size(); i++) {
+                    if (list.get(i) != null) {
+                        textArea.appendText(list.get(i) + "\n");
+                    }
+//                }
+            }
+        } catch (IOException ex) {
+            System.out.println(ex);
+        }
     }
 }
