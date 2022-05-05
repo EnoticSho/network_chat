@@ -52,7 +52,7 @@ public class ChatClient {
                 Platform.runLater(() -> controller.showError(errorMessage.getError()));
             } else if (message.getCommand() == Command.CLIENTS) {
                 final ClientListMessage clientListMessage = (ClientListMessage) message;
-                controller.updateClientList(clientListMessage.getClients());
+                Platform.runLater(() -> controller.updateClientList(clientListMessage.getClients()));
             } else if (message.getCommand() == Command.CHANGENICK) {
                 final ChangeNickMessage changeNickMessage = (ChangeNickMessage) message;
                 controller.addMessage("Пользователь " + changeNickMessage.getOldNick() + " изменил ник на : " + changeNickMessage.getNewNick());
@@ -79,6 +79,7 @@ public class ChatClient {
             if (message.getCommand() == Command.AUTHOK) {
                 this.nick = ((AuthOkMessage) message).getNick();
                 controller.setAuth(true);
+                Platform.runLater(controller::loadHistory);
                 controller.addMessage("Успешная авторизация под ником " + nick);
                 break;
             }

@@ -86,7 +86,6 @@ public class Controller {
     public void setAuth(boolean success) {
         loginBox.setVisible(!success);
         messageBox.setVisible(success);
-        Platform.runLater(this::loadHistory);
     }
 
     private void showNotification() {
