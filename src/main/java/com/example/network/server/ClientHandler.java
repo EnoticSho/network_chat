@@ -1,7 +1,6 @@
 package com.example.network.server;
 
 import com.example.messages.*;
-
 import java.io.*;
 import java.net.Socket;
 
@@ -12,7 +11,6 @@ public class ClientHandler {
     private final ObjectInputStream in;
     private final ObjectOutputStream out;
     private final AuthService authService;
-
     private String nick;
 
     public ClientHandler(Socket socket, ChatServer server, AuthService authService) {
@@ -123,7 +121,7 @@ public class ClientHandler {
                     server.sendMessageToClient(this, privateMessage.getNickTo(), privateMessage.getMessage());
                 }
                 if (message.getCommand() == Command.CHANGENICK) {
-                    try (ChangeNickService changeNickService = new ChangeNickService()){
+                    try (ChangeNickService changeNickService = new ChangeNickService()) {
                         ChangeNickMessage changeNickMessage = (ChangeNickMessage) message;
                         changeNickService.changeNick(changeNickMessage.getNewNick(), changeNickMessage.getOldNick());
                         this.nick = changeNickMessage.getNewNick();

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.example.messages.*;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -70,8 +71,8 @@ public class Controller {
 
     public void addMessage(String message) {
         textArea.appendText(message + "\n");
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileHistory))) {
-            writer.write(textArea.getText());
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileHistory, true))) {
+            writer.write(message + "\n");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -85,7 +86,7 @@ public class Controller {
     public void setAuth(boolean success) {
         loginBox.setVisible(!success);
         messageBox.setVisible(success);
-        loadHistory();
+        Platform.runLater(this::loadHistory);
     }
 
     private void showNotification() {
@@ -134,25 +135,21 @@ public class Controller {
     }
 
     public void loadHistory() {
-        int pos = 50;
+        int fixMessage = 100;
         List<String> list = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(fileHistory))) {
             String s;
             while ((s = br.readLine()) != null) {
                 list.add(s);
             }
-//            if (list.size() > pos) {
-//                for (int i = list.size() - pos; i < list.size(); i++) {
-//                    if (list.get(i) != null) {
-//                        textArea.appendText(list.get(i) + "\n");
-//                    }
-//                }
-//            } else {
-                for (int i = 0; i < list.size(); i++) {
-                    if (list.get(i) != null) {
-                        textArea.appendText(list.get(i) + "\n");
-                    }
-//                }
+            if (list.size() > fixMessage) {
+                for (int i = list.size() - fixMessage; i < list.size(); i++) {
+                    textArea.appendText(list.get(i) + "\n");
+                }
+            }else {
+                for (String s1 : list) {
+                    textArea.appendText(s1 + "\n");
+                }
             }
         } catch (IOException ex) {
             System.out.println(ex);
