@@ -3,6 +3,8 @@ package com.example.network.server;
 import com.example.messages.*;
 import java.io.*;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ClientHandler {
     private final AuthTimeThread authTimeThread;
@@ -21,17 +23,19 @@ public class ClientHandler {
             this.in = new ObjectInputStream(socket.getInputStream());
             this.out = new ObjectOutputStream(socket.getOutputStream());
             this.authService = authService;
-
             authTimeThread = new AuthTimeThread(this);
             authTimeThread.start();
-            new Thread(() -> {
+            ExecutorService service = Executors.newFixedThreadPool(10);
+            service.execute(() -> {
                 try {
                     authenticate();
                     readMessages();
                 } finally {
                     closeConnection();
                 }
-            }).start();
+            });
+            service.shutdown();
+
 
         } catch (IOException e) {
             throw new RuntimeException(e);
