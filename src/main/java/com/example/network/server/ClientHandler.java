@@ -4,6 +4,8 @@ import com.example.messages.*;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ClientHandler {
     private final AuthTimeThread authTimeThread;
@@ -26,15 +28,16 @@ public class ClientHandler {
 
             authTimeThread = new AuthTimeThread(this);
             authTimeThread.start();
-            new Thread(() -> {
+            ExecutorService service = Executors.newFixedThreadPool(10);
+            service.execute(() -> {
                 try {
                     authenticate();
                     readMessages();
                 } finally {
                     closeConnection();
                 }
-            }).start();
-
+            });
+            service.shutdown();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -123,7 +126,7 @@ public class ClientHandler {
                     server.sendMessageToClient(this, privateMessage.getNickTo(), privateMessage.getMessage());
                 }
                 if (message.getCommand() == Command.CHANGENICK) {
-                    try (ChangeNickService changeNickService = new ChangeNickService()){
+                    try (ChangeNickService changeNickService = new ChangeNickService()) {
                         ChangeNickMessage changeNickMessage = (ChangeNickMessage) message;
                         changeNickService.changeNick(changeNickMessage.getNewNick(), changeNickMessage.getOldNick());
                         this.nick = changeNickMessage.getNewNick();
