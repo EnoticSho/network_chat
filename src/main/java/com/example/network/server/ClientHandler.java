@@ -1,13 +1,13 @@
 package com.example.network.server;
 
-import com.example.messages.*;
+import  com.example.messages.*;
 
 import java.io.*;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ClientHandler {
+public class ClientHandler implements Runnable{
     private final AuthTimeThread authTimeThread;
     private final Socket socket;
     private final ChatServer server;
@@ -17,31 +17,31 @@ public class ClientHandler {
 
     private String nick;
 
+    @Override
+    public void run() {
+        authTimeThread.start();
+        new Thread(() -> {
+            try {
+                authenticate();
+                readMessages();
+            } finally {
+                closeConnection();
+            }
+        }).start();
+    }
+
     public ClientHandler(Socket socket, ChatServer server, AuthService authService) {
-        try {
             this.nick = "";
             this.socket = socket;
             this.server = server;
-            this.in = new ObjectInputStream(socket.getInputStream());
-            this.out = new ObjectOutputStream(socket.getOutputStream());
             this.authService = authService;
-
-            authTimeThread = new AuthTimeThread(this);
-            authTimeThread.start();
-            ExecutorService service = Executors.newFixedThreadPool(10);
-            service.execute(() -> {
-                try {
-                    authenticate();
-                    readMessages();
-                } finally {
-                    closeConnection();
-                }
-            });
-            service.shutdown();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+            try {
+                in = new ObjectInputStream(socket.getInputStream());
+                out = new ObjectOutputStream(socket.getOutputStream());
+                authTimeThread = new AuthTimeThread(this);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
     }
 
     public void closeConnection() {
@@ -144,4 +144,6 @@ public class ClientHandler {
     public String getNick() {
         return nick;
     }
+
+
 }

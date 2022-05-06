@@ -9,6 +9,8 @@ import java.sql.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class ChatServer {
@@ -20,16 +22,19 @@ public class ChatServer {
     }
 
     public void run() {
+        ExecutorService executorService = Executors.newCachedThreadPool();
         try (ServerSocket serverSocket = new ServerSocket(8109);
              AuthService authService = new DbAuthService()) {
             while (true) {
                 System.out.println("Wait client connection...");
                 final Socket socket = serverSocket.accept();
-                new ClientHandler(socket, this, authService);
+                executorService.execute(new ClientHandler(socket, this, authService));
                 System.out.println("Client connected");
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            executorService.shutdownNow();
         }
     }
 
@@ -42,7 +47,7 @@ public class ChatServer {
         broadcastClientList();
     }
 
-    public void update(String oldNick, ClientHandler client){
+    public void update(String oldNick, ClientHandler client) {
         clients.remove(oldNick);
         clients.put(client.getNick(), client);
         broadcastClientList();
