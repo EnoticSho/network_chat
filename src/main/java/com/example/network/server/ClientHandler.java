@@ -4,7 +4,7 @@ import com.example.messages.*;
 import java.io.*;
 import java.net.Socket;
 
-public class ClientHandler {
+public class ClientHandler implements Runnable{
     private final AuthTimeThread authTimeThread;
     private final Socket socket;
     private final ChatServer server;
@@ -14,30 +14,33 @@ public class ClientHandler {
     private String nick;
 
     public ClientHandler(Socket socket, ChatServer server, AuthService authService) {
-        try {
             this.nick = "";
             this.socket = socket;
             this.server = server;
-            this.in = new ObjectInputStream(socket.getInputStream());
-            this.out = new ObjectOutputStream(socket.getOutputStream());
             this.authService = authService;
-
+        try {
+            in = new ObjectInputStream(socket.getInputStream());
+            out = new ObjectOutputStream(socket.getOutputStream());
             authTimeThread = new AuthTimeThread(this);
-            authTimeThread.start();
-            new Thread(() -> {
-                try {
-                    authenticate();
-                    readMessages();
-                } finally {
-                    closeConnection();
-                }
-            }).start();
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
+
+    @Override
+    public void run() {
+        authTimeThread.start();
+        new Thread(() -> {
+            try {
+                authenticate();
+                readMessages();
+            } finally {
+                closeConnection();
+            }
+        }).start();
+    }
+
+
 
     public void closeConnection() {
         sendMessage(EndMessage.of());

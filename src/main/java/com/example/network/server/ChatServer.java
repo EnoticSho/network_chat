@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,16 +22,19 @@ public class ChatServer {
     }
 
     public void run() {
+        ExecutorService executorService = Executors.newCachedThreadPool();
         try (ServerSocket serverSocket = new ServerSocket(8109);
              AuthService authService = new DbAuthService()) {
             while (true) {
                 System.out.println("Wait client connection...");
                 final Socket socket = serverSocket.accept();
-                new ClientHandler(socket, this, authService);
+                executorService.execute(new ClientHandler(socket, this, authService));
                 System.out.println("Client connected");
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }finally {
+            executorService.shutdownNow();
         }
     }
 
